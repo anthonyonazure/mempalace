@@ -1002,8 +1002,10 @@ class MempalaceConfig:
         Defaults to a "palace" sub-directory inside the active config
         directory, so the palace follows the config wherever XDG places it.
         """
+        from .client_walls import resolve as _client_walls_resolve
+
         if self._palace_path_override is not None:
-            return self._palace_path_override
+            return _client_walls_resolve(self._file_config, self._palace_path_override)
         # Precedence: MEMPALACE_PALACE_PATH (documented, primary) >
         # MEMPALACE_PALACE (short alias accepted per #2366) > MEMPAL_PALACE_PATH (legacy).
         env_val = (
@@ -1015,7 +1017,13 @@ class MempalaceConfig:
             # Normalize: expand ~ and collapse .. to match the CLI --palace
             # code path (mcp_server.py:62) and prevent surprise redirection
             # when the env var contains unresolved components.
-            return os.path.abspath(os.path.expanduser(env_val))
+            return _client_walls_resolve(
+                self._file_config, os.path.abspath(os.path.expanduser(env_val))
+            )
+        # Fork hook: a client's folder gets that client's own palace.
+        walled = _client_walls_resolve(self._file_config, None)
+        if walled is not None:
+            return walled
         return os.path.expanduser(
             self._file_config.get("palace_path", str(self._config_dir / "palace"))
         )

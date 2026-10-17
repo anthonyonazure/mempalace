@@ -774,6 +774,7 @@ def main():
         default=None,
         help="Storage backend to use for status (default: config/env/detected/chroma)",
     )
+    sub.add_parser("clients", help="Show client walls: which client palace this folder uses")
     p_update = sub.add_parser("update", help="Opt-in release checks and upgrade planning")
     update_sub = p_update.add_subparsers(dest="update_action")
     p_update_configure = update_sub.add_parser("configure", help="Configure periodic checks")
@@ -1149,6 +1150,17 @@ def main():
         cmd_daemon(args)
         return
 
+    def cmd_clients(_args):
+        from ..client_walls import ClientWallError, describe
+        from ..config import MempalaceConfig
+
+        cfg = MempalaceConfig()
+        try:
+            active = cfg.palace_path
+        except ClientWallError as e:
+            active = f"(refused: {e})"
+        print(describe(cfg._file_config, active))
+
     dispatch = {
         "init": cmd_init,
         "rules": cmd_rules,
@@ -1173,5 +1185,6 @@ def main():
         "tunnels": cmd_tunnels,
         "status": cmd_status,
         "update": cmd_update,
+        "clients": cmd_clients,
     }
     dispatch[args.command](args)
