@@ -407,13 +407,22 @@ def _finalize_candidate_hits(
         )
 
     vector_weight, bm25_weight = _resolve_hybrid_rank_weights()
-    ranked = _hybrid_rank(
+    metric = _metric_for_collection(drawers_col)
+    # Fork hook: opt-in fusion / recency / cross-encoder over the full pool.
+    # With every enhancement off this is exactly the upstream convex rank.
+    from .. import search_enhancements as _enh
+
+    ranked = _enh.rank_pool(
         hits,
         query,
-        vector_weight=vector_weight,
-        bm25_weight=bm25_weight,
-        metric=_metric_for_collection(drawers_col),
-        stop_words=stop_words,
+        lambda pool: _hybrid_rank(
+            pool,
+            query,
+            vector_weight=vector_weight,
+            bm25_weight=bm25_weight,
+            metric=metric,
+            stop_words=stop_words,
+        ),
     )
     hits = _fold_copies_across_sources(
         _dedupe_rendered_hits(ranked), _search_hit_source, _search_hit_ref

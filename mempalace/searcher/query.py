@@ -451,6 +451,11 @@ def search_memories(
     if strategy_error:
         return strategy_error
 
+    # Fork hook: opt-in provenance labels, curated-first order, confidence.
+    from .. import search_enhancements as _enh
+
+    hits = _enh.finish_hits(hits)
+
     candidates_fetched = len(_first_or_empty(drawer_results, "documents"))
     envelope = _search_result_envelope(
         query=query,

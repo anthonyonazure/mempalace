@@ -161,13 +161,20 @@ def _cli_ranked_hits(
         for doc, meta, dist in zip(docs, metas, dists)
     ]
     vector_weight, bm25_weight = _resolve_hybrid_rank_weights()
-    hits = _hybrid_rank(
+    # Fork hook: same opt-in ranking stages as search_memories.
+    from .. import search_enhancements as _enh
+
+    hits = _enh.rank_pool(
         hits,
         query,
-        vector_weight=vector_weight,
-        bm25_weight=bm25_weight,
-        metric=metric,
-        stop_words=stop_words,
+        lambda pool: _hybrid_rank(
+            pool,
+            query,
+            vector_weight=vector_weight,
+            bm25_weight=bm25_weight,
+            metric=metric,
+            stop_words=stop_words,
+        ),
     )
     return _fold_copies_across_sources(hits, _cli_hit_source, _cli_hit_ref), fetched
 
