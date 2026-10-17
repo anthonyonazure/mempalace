@@ -396,6 +396,13 @@ def get_collection(
                 )
     if "requires_explicit_embeddings" in getattr(backend_obj, "capabilities", frozenset()):
         collection = EmbeddingCollection(collection)
+    if not read_only:
+        # Fork hook: redact credentials from every document written through
+        # this collection (on by default; MEMPALACE_SCRUB_SECRETS=0 disables).
+        from .. import secret_scrubber
+
+        if secret_scrubber.enabled():
+            secret_scrubber.install(collection)
     if not _skip_identity_check:
         _enforce_embedder_identity(collection, palace_path, collection_name, create=create)
     return collection
