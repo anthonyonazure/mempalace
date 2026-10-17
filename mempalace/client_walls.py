@@ -129,7 +129,7 @@ def resolve(file_config: Optional[dict], explicit: Optional[str]) -> Optional[st
     """
     cfg = settings(file_config)
     if cfg is None:
-        return None
+        return explicit
     here_client = client_for_folder(cfg)
     pinned = os.environ.get("MEMPALACE_CLIENT", "").strip().lower()
     if pinned and pinned not in cfg["clients"]:

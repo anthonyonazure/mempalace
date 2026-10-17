@@ -170,3 +170,13 @@ def test_search_cannot_see_the_other_client(layout, monkeypatch):
     acme_path = MempalaceConfig(config_dir=str(layout["config_dir"])).palace_path
     result = search_memories("CMMC level 2", acme_path, n_results=5)
     assert all("Beltway" not in h["text"] for h in result["results"])
+
+
+def test_unconfigured_keeps_explicit_palace(tmp_path, monkeypatch):
+    monkeypatch.setenv("MEMPALACE_PALACE_PATH", str(tmp_path / "custom"))
+    monkeypatch.chdir(tmp_path)
+    cfg = MempalaceConfig(config_dir=str(tmp_path))
+    assert cfg.palace_path == str(tmp_path / "custom")
+    assert MempalaceConfig(
+        config_dir=str(tmp_path), palace_path=str(tmp_path / "o")
+    ).palace_path == str(tmp_path / "o")
