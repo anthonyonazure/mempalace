@@ -775,6 +775,19 @@ def main():
         help="Storage backend to use for status (default: config/env/detected/chroma)",
     )
     sub.add_parser("clients", help="Show client walls: which client palace this folder uses")
+    p_eval = sub.add_parser(
+        "eval", help="Score search quality on your own question file (read-only)"
+    )
+    p_eval.add_argument("questions", help="YAML or JSON file of questions and expected answers")
+    p_eval.add_argument(
+        "--init", action="store_true", help="Write a starter question file at that path"
+    )
+    p_eval.add_argument(
+        "--profiles",
+        default=None,
+        help="Comma list: baseline,rrf,recency,curated-first,cross-encoder,all (default: all of them)",
+    )
+    p_eval.add_argument("--json", default=None, help="Also save the full report as JSON here")
     p_update = sub.add_parser("update", help="Opt-in release checks and upgrade planning")
     update_sub = p_update.add_subparsers(dest="update_action")
     p_update_configure = update_sub.add_parser("configure", help="Configure periodic checks")
@@ -1150,6 +1163,11 @@ def main():
         cmd_daemon(args)
         return
 
+    def cmd_eval(eval_args):
+        from ..eval_harness import cmd_eval as _run_eval
+
+        raise SystemExit(_run_eval(eval_args))
+
     def cmd_clients(_args):
         from ..client_walls import ClientWallError, describe
         from ..config import MempalaceConfig
@@ -1186,5 +1204,6 @@ def main():
         "status": cmd_status,
         "update": cmd_update,
         "clients": cmd_clients,
+        "eval": cmd_eval,
     }
     dispatch[args.command](args)
