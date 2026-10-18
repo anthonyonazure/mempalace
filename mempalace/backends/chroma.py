@@ -4465,7 +4465,12 @@ class ChromaBackend(BaseBackend):
                     raise
             if caller_vectors:
                 _require_caller_vector_collection(collection)
-            else:
+            elif not (options and options.get("read_only", False)):
+                # Fork fix: a read-only open (every search) never inserts, so it
+                # does not need the single-thread insert pin. collection.modify()
+                # writes to chroma.sqlite3, which moved the file's mtime on every
+                # search and so defeated the hnsw_capacity_status cache (about
+                # 240 ms of a 300 ms search).
                 _pin_hnsw_threads(collection)
             # Our own client construction and collection open just wrote to
             # chroma.sqlite3; re-baseline so the next _client() call does not read
