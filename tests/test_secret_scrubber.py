@@ -119,3 +119,25 @@ class TestWritePath:
         stored = col.get(ids=["d1"], include=["documents"])
         docs = stored.documents if hasattr(stored, "documents") else stored["documents"]
         assert docs == ["Password=Sup3rS3cret!"]
+
+
+class TestServerWritePath:
+    """The MCP/HTTP tools open Chroma themselves, so they need the scrubber too."""
+
+    def test_add_drawer_tool_redacts_secrets(self, monkeypatch, config, collection, kg):
+        from mempalace import mcp_server
+
+        monkeypatch.delenv("MEMPALACE_SCRUB_SECRETS", raising=False)
+        monkeypatch.setattr(mcp_server, "_config", config)
+        monkeypatch.setattr(mcp_server, "_get_kg", lambda: kg)
+
+        added = mcp_server.tool_add_drawer(
+            wing="acme",
+            room="sql",
+            content="Reset login. Password=Sup3rS3cret! and ghp_abcdefghijklmnopqrstuvwxyz0123456789",
+        )
+        stored = mcp_server.tool_get_drawer(added["drawer_id"])
+
+        assert "Sup3rS3cret" not in stored["content"]
+        assert "ghp_abcdefghijklmnopqrstuvwxyz0123456789" not in stored["content"]
+        assert "[REDACTED:" in stored["content"]

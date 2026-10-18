@@ -521,6 +521,12 @@ def _checked_chroma_collection(raw, *, create):
     _enforce_embedder_identity(
         collection, _config.palace_path, _config.collection_name, create=create
     )
+    # Fork hook: the MCP/HTTP write path opens Chroma itself and skips
+    # palace.get_collection, so redact credentials here as well.
+    from .. import secret_scrubber
+
+    if secret_scrubber.enabled():
+        secret_scrubber.install(collection)
     return collection
 
 
